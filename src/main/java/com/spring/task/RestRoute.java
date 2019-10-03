@@ -199,4 +199,44 @@ public class RestRoute
         }
         return result;
     }
+
+    @DeleteMapping("/home/{eid}")
+    public ResponseEntity deleteEmployee(@PathVariable("eid") int eid)
+    {
+        Employee emp=empRepo.findByEmpId(eid);
+        if(emp!=null)
+        {
+            if(emp.getDesgName().equals("director"))
+            {
+                List<Employee> list=empRepo.findAllByParentId(emp.getEmpId());
+                if(list.size()>0)
+                {
+                    // Not able to delete
+                    return new ResponseEntity("Bad Request",HttpStatus.BAD_REQUEST);
+                }
+                else
+                {
+                    //Able to delete
+                    empRepo.delete(emp);
+                    return new ResponseEntity("Deleted Successfully",HttpStatus.OK);
+                }
+            }
+            else
+            {
+                int parentId=emp.getParentId();
+                List<Employee> childs=empRepo.findAllByParentId(emp.getEmpId());
+                for(Employee employee:childs)
+                {
+                    employee.setParentId(parentId);
+                    empRepo.save(employee);
+                }
+                empRepo.delete(emp);
+                return new ResponseEntity("Deleted Successfully",HttpStatus.OK);
+            }
+        }
+        else
+        {
+            return new ResponseEntity("Bad Request",HttpStatus.BAD_REQUEST);
+        }
+    }
 }
